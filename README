@@ -1,0 +1,71 @@
+README for Finance::YahooProfile
+
+This is a perl 5 module that will extract numerical data from a 
+stock's company profile from Yahoo! Finance.  
+
+Example of use:
+
+  use Finance::YahooProfile;
+  my $fyp = new Finance::YahooProfile ( timeout => $timeout );
+  my $profile  = $fyp->profile( s => 'intc' );               ## for single stock
+  my @profiles = $fyp->profile( s => ['intc', 'ibm'] );      ## for many stocks
+  my $bookvalue = $res->{'book_value'};        ## one example of data available
+
+The available data are:
+
+  52_week_change            52-Week percent change
+  52_week_change_sp500      52-Week percent change relative to the S&P 500
+  52_week_high              52-Week high
+  52_week_high_date         Date on which 52-Week high was reached
+  52_week_low               52-Week low
+  52_week_low_date          Date on which 52-Week high was reached
+  beta                      Beta relative to S&P 500
+  current_ratio             Current ratio (Current Assets / Current Liabilities)
+  daily_volume_10da         Average of the last 10 days' trading volume
+  daily_volume_3ma          Average of the last 3 months trading volume
+  debt_equity               Debt / Equity
+  dividend                  Amount of the last dividend paid
+  dividend_yield            Yield of the last dividend
+  fiscal_year_ends          End of fiscal year
+  last_split_date           Date of the last split
+  last_split_factor         Factor of the last split (e.g. 2 for 1)
+  last_updated              Date when profile was last updated
+  market                    Market on which the stock is traded
+  market_capitalization     Market capitalization (Stock Price x Shares Outstanding)
+  most_recent_quarter
+  most_recent_quarter_fe    Most recent quarter - flash earnings (if available)
+  operating_margin          Operating Margin (Earnings / Operating Expenses)
+  profit_margin             Profit Margin (Earnings / Total Expenses)
+  recent_price              Price at which the stock was last traded
+  return_on_assets          Return on assets (Earnings / Total Assets)
+  return_on_equity          Return on equity (Earnings / Shareholder's Equity)
+  shares_float              Number of shares freely trading in the markets
+  shares_outstanding        Total number of shares issued
+  short_daily_volume        
+  short_interest            Number of shares sold short
+  short_interest_date
+  short_percent             Short Interest / Floating Shares
+  short_previous_month      Short Interest previous month
+  short_ratio               
+  symbol
+  total_cash                Total current assets in the balance sheet
+
+Read the manpage or source code for more.
+
+Once the archive has been unpacked, the following steps are needed
+to build and install the module (to be done in the directory which
+contains the Makefile.PL)
+
+  perl Makefile.PL
+  make
+
+No tests are currently defined for the module.
+
+If the build succeeds, install it with the following command:
+
+  make install
+
+An example script appears in the example directory.
+
+Send any questions, or comments to
+Sidharth Malhotra <smalhotra@redeyetg.com>
