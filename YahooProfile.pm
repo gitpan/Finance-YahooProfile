@@ -3,10 +3,10 @@ package Finance::YahooProfile;
 use strict;
 use vars qw($VERSION);
 
+$VERSION = '1.11b';
+
 use LWP::UserAgent;
 use HTTP::Request::Common;
-
-$VERSION = 0.11;
 
 sub new {
     my $type = shift;
@@ -42,6 +42,7 @@ sub profile {
 	$url = "http://biz.yahoo.com/p/$firstletter/$s.html";
 	$content = $ua->request(GET $url)->content();
 	$res = {};  ## to store the results
+	$res->{'requested_symbol'} = $s;
 
 	{
 	    local $/;
@@ -53,6 +54,13 @@ sub profile {
 	$content =~ s/.*(Statistics at a Glance -- )//s;  ## remove the beginning
 	$content =~ s/(See Profile).*//s;                 ## remove the end
 	
+	## Check for non-existent data
+	if ($content =~ /\nNo Such Data/) {
+	    $res->{'success'} = 0;
+	    push (@res, $res);
+	    next;
+	}
+
 	## Market
 	$content =~ s/(.+?)://s;
 	$res->{'market'} = $1;
@@ -160,7 +168,7 @@ sub profile {
 	}
 	
 	## Short Interest
-	if ($content =~ s/.*?InterestAs\nof (.+?)Shares\nShort(.+?)Percent of Float(.+?)Shares Short\(Prior Month\)(.+?)Short Ratio(.+?) Daily Volume(.+)//s) { 
+	if ($content =~ s/.*?InterestAs\nof (.+?)Shares\nShort(.+?)Percent of Float(.+?)Shares Short\(Prior Month\)(.+?)Short Ratio(.+?) Daily Volume([\d\.KMB]+)//s) { 
 	    $res->{'short_interest_date'} = $1;
 	    $res->{'short_interest'} = $2;
 	    $res->{'short_percent'} = $3;
@@ -170,7 +178,8 @@ sub profile {
 	}
 	
 	$self->_expand($res) if $self->{'expand'};
-
+	$res->{'success'} = 1;
+	
 	push(@res, $res);
     }
 
@@ -232,6 +241,9 @@ Finance::YahooProfile - Get a stock profiles from Yahoo!
 
 WARNING:  This module has not been fully tested all sorts of stocks so 
 it may NOT always parse the page correctly and return any useful information.
+Any version number ending in a letter (as in v.0.12b, 0.12c) is a beta versions 
+and have barely been tested. These versions are simply the previous version
+with a slight bug fix of some sort.
 
 This module accesses the company profile from Yahoo! Finance and extracts
 the numbers from there so that they can be easily used in Perl programs.
@@ -271,6 +283,7 @@ The following keys are available in the results hash:
   short_percent             Short Interest / Floating Shares
   short_previous_month      Short Interest previous month
   short_ratio               
+  success                   Whether the parsing was a success
   symbol
   total_cash                Total current assets in the balance sheet
 
@@ -298,6 +311,18 @@ options you can pass to it:
 
 None.
 
+=head1 VERSION HISTORY
+
+0.1    -          -  Initial Release.
+0.11   -          -  Slight Changes
+0.11b  - 02/08/02 -  Stopped parsing if the ticker symbol did not return valid
+                     a profile page.  Added the 'success' and 'requested_symbol'
+                     keys to $res.
+                     Changed regex match for short_daily_volume from (.+)
+                     to ([\d\.KMB]) since the old regex did not work for
+                     ADRs like BF.
+                  
+
 =head1 COPYRIGHT
 
 Copyright 2002, Sidharth Malhotra
@@ -315,6 +340,7 @@ information.
 =head1 AUTHOR
 
 Sidharth Malhotra (C<smalhotra@redeyetg.com>), Redeye Technology Group.
+Thanks to Ivo Welch for finding bugs and suggesting several improvements.
 
 =head1 SEE ALSO
 
