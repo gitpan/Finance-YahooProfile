@@ -1,6 +1,0 @@
-Revision history for Perl extension Finance::YahooProfile.
-
-0.01  Sat Jan 19 23:34:43 2002
-	- original version; created by h2xs 1.21 with options
-		-AX -n Finance::YahooProfile
-

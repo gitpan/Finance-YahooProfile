@@ -1,10 +1,11 @@
 #!c:\perl\bin\perl
 
+use strict;
 use Finance::YahooProfile;
 
-die "Usage: $0 symbol [symbol ...]" if $#ARGV == -1;
+print "Usage: $0 symbol [symbol ...]" && exit if $#ARGV == -1;
 
-my $qd = new Finance::YahooProfile;
+my $qd = new Finance::YahooProfile (expand => 1);
 
 my @sym = @ARGV;
 my @res = $qd->profile( s => [@sym]);

@@ -3,7 +3,7 @@ package Finance::YahooProfile;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.11b';
+$VERSION = '1.12';
 
 use LWP::UserAgent;
 use HTTP::Request::Common;
@@ -21,6 +21,7 @@ sub _init {
     my ($self, %params) = @_;
     for (keys %params) {
 	$self->{$_} = $params{$_};
+	$self->{'dollar_symbol'} = 1 unless defined $params{'dollar_symbol'};
     }
 }
 
@@ -177,7 +178,7 @@ sub profile {
 	    $res->{'short_daily_volume'} = $6;
 	}
 	
-	$self->_expand($res) if $self->{'expand'};
+	$self->_expand($res) if $self->{'expand_numbers'} || $self->{'expand_percent'} || $self->{'expand'};
 	$res->{'success'} = 1;
 	
 	push(@res, $res);
@@ -189,33 +190,59 @@ sub profile {
 
 sub _expand {
     my ($self, $res) = @_;
-    my (%factors, $key, $dollar, $factor, @number_keys);
+    my (%factors, $key, $dollar, $factor, @number_keys, @percent_keys);
     
     %factors = ( 'K' => 1_000,
 		 'M' => 1_000_000,
-		 'B' => 1_000_000_000
+		 'B' => 1_000_000_000,
+		 'T' => 1_000_000_000_000       ## for when we have the first trillion dollar company.
 	       );
 
     @number_keys = qw(
 		      daily_volume_10da
 		      daily_volume_3ma
+		      ebitda
+		      income
 		      market_capitalization
+		      sales
 		      shares_float
 		      shares_outstanding
+		      short_interest
 		      short_daily_volume
 		      short_previous_month
 		      total_cash
 		     );
 
-    for $key (@number_keys) {
-	$dollar = ($res->{$key} =~ s/^\$//) ? '$' : '';  ## save dollar sign'
+    @percent_keys = qw(
+		       52_week_change
+		       52_week_change_sp500
+		       dividend_yield
+		       operating_margin
+		       profit_margin
+		       return_on_assets
+		       return_on_equity
+		       short_percent
+		       );
 
-	if ($res->{$key} =~ s/(K|M|B)$//) { 
-	    $res->{$key} *= $factors{$1};
+    if ($self->{'expand_numbers'} || $self->{'expand'}) {
+	for $key (@number_keys) {
+	    $dollar = (($res->{$key} =~ s/^\$//) ? '$' : '');  ## save dollar sign'
+
+	    if ($res->{$key} =~ s/(K|M|B|T)$//) { 
+		$res->{$key} *= $factors{$1};
+	    }
+	    
+	    if ($self->{'dollar_symbol'}) {
+		$res->{$key} = $dollar . $res->{$key};
+	    }
 	}
+    }
 
-	if ($self->{'dollar_symbol'}) {
-	    $res->{$key} = $dollar . $res->{$key};
+    if ($self->{'expand_percent'} || $self->{'expand'}) {
+	for $key (@percent_keys) {
+	    if ($res->{$key} =~ s/^([\+\-\d\.]+)%$/$1/) { 
+		$res->{$key} /= 100;
+	    }
 	}
     }
 }
@@ -275,6 +302,7 @@ The following keys are available in the results hash:
   recent_price              Price at which the stock was last traded
   return_on_assets          Return on assets (Earnings / Total Assets)
   return_on_equity          Return on equity (Earnings / Shareholder's Equity)
+  sales                     Sales from the income statement part (usually ttm)
   shares_float              Number of shares freely trading in the markets
   shares_outstanding        Total number of shares issued
   short_daily_volume        
@@ -300,8 +328,10 @@ options you can pass to it:
                                     dollar_symbol => 0|1
                                   );
 
-  expand => If this option is set, number such as 3.14M will be
-            converted to 3140000 before being passed back.
+  expand_number => If this option is set, number such as 3.14M will be
+                converted to 3140000 before being passed back.
+  expand_percent=> Something like 5.56% will be converted to 0.056
+  expand => sets both expand_number and expand_percent
 
   dollar_symbol => If you set expand to true, then this flag will
             determine whether the dollar symbol is kept in numbers
@@ -321,6 +351,9 @@ None.
                      Changed regex match for short_daily_volume from (.+)
                      to ([\d\.KMB]) since the old regex did not work for
                      ADRs like BF.
+0.12   - 05/01/02 -  Added conversion of percents to decimals in _expand()  (5.82% => 0.0582)
+                     The options are now 'expand_number' for numerical expansion (K,M,B) and 
+                     'expand_percent' for decimal conversion or simply 'expand' for both.
                   
 
 =head1 COPYRIGHT
